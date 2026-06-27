@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>M. Berk SAM — Kod & Sınırsız Hayat</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,400..500&family=JetBrains+Mono:wght@400;500;700&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#0B0E1A; --ink-2:#11152A; --bone:#EAE6DC; --muted:rgba(234,230,220,0.55);
+    --signal:#4DE1C1; --signal-2:#5B8CFF; --ember:#FF8A4C; --ember-2:#FF5E8A;
+    --accent:var(--signal);          /* swaps with world */
+    --font-display:'Fraunces',serif; --font-mono:'JetBrains Mono',monospace; --font-body:'Space Grotesk',sans-serif;
+    --ease:cubic-bezier(0.16,1,0.3,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{font-family:var(--font-body);color:var(--bone);background:var(--ink);overflow-x:hidden;
+    transition:background 1.6s var(--ease);}
+  body.world-nomad{--accent:var(--ember);}
+  ::selection{background:var(--accent);color:var(--ink);}
+
+  /* layers */
+  #bg{position:fixed;inset:0;z-index:0;transition:background 1.6s var(--ease);
+    background:radial-gradient(80% 70% at 78% 38%, #10203a 0%, var(--ink) 62%);}
+  body.world-nomad #bg{background:radial-gradient(80% 70% at 78% 38%, #2a1510 0%, #0c0710 62%);}
+  #scene{position:fixed;inset:0;z-index:1;}
+  .scrim{position:fixed;inset:0;z-index:2;pointer-events:none;
+    background:linear-gradient(90deg, rgba(11,14,26,0.85) 0%, rgba(11,14,26,0.4) 24%, rgba(11,14,26,0) 52%);
+    transition:background 1.6s var(--ease);}
+  body.world-nomad .scrim{background:linear-gradient(90deg, rgba(12,7,16,0.85) 0%, rgba(12,7,16,0.4) 24%, rgba(12,7,16,0) 52%);}
+  .grain{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:0.05;mix-blend-mode:overlay;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");}
+  .vignette{position:fixed;inset:0;z-index:3;pointer-events:none;
+    box-shadow:inset 0 0 240px 30px rgba(0,0,0,0.4);}
+
+  .content{position:relative;z-index:4;pointer-events:none;}
+  .content a,.content button{pointer-events:auto;}
+
+  /* status bar */
+  .statusbar{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;
+    justify-content:space-between;gap:1rem;padding:1rem clamp(1.2rem,4vw,2.4rem);
+    font-family:var(--font-mono);font-size:11px;letter-spacing:0.14em;color:var(--muted);
+    text-transform:uppercase;backdrop-filter:blur(2px);}
+  .statusbar .brand{color:var(--bone);display:flex;align-items:center;gap:0.6rem;}
+  .statusbar .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);
+    box-shadow:0 0 12px var(--accent);transition:background 0.8s var(--ease),box-shadow 0.8s var(--ease);}
+  .statusbar .clock{color:var(--bone);font-variant-numeric:tabular-nums;}
+  @media(max-width:720px){.statusbar .brand .sep,.statusbar .clock .loc{display:none;}}
+
+  .toggle{display:flex;gap:2px;padding:3px;border:1px solid rgba(234,230,220,0.15);border-radius:2px;}
+  .toggle button{font-family:var(--font-mono);font-size:11px;letter-spacing:0.12em;text-transform:uppercase;
+    border:0;background:transparent;color:var(--muted);padding:7px 13px;cursor:pointer;transition:all 0.5s var(--ease);}
+  .toggle button.active{background:var(--accent);color:var(--ink);}
+
+  .nav{display:flex;gap:clamp(0.9rem,2vw,1.6rem);font-family:var(--font-mono);font-size:11px;
+    letter-spacing:0.14em;text-transform:uppercase;}
+  .nav a{color:var(--muted);text-decoration:none;transition:color 0.4s var(--ease),transform 0.3s var(--ease);}
+  .nav a:hover{color:var(--accent);}
+  @media(max-width:760px){ .nav{display:none;} }
+
+  /* 2026: kinetic hero, custom cursor, magnetic links, skip-link */
+  .hero h1 .kline{display:block;white-space:nowrap;}
+  .kc{display:inline-block;transition:font-variation-settings .25s var(--ease),transform .25s var(--ease);}
+  .links a{will-change:transform;}
+  .cursor-dot{position:fixed;top:0;left:0;width:6px;height:6px;border-radius:50%;background:var(--accent);
+    pointer-events:none;z-index:61;will-change:transform;transition:background .8s var(--ease);}
+  .cursor-ring{position:fixed;top:0;left:0;width:30px;height:30px;border:1.5px solid var(--accent);border-radius:50%;
+    pointer-events:none;z-index:60;will-change:transform;
+    transition:width .25s var(--ease),height .25s var(--ease),background .25s var(--ease),border-color .8s var(--ease);}
+  .cursor-ring.big{width:52px;height:52px;background:color-mix(in srgb,var(--accent) 12%,transparent);}
+  .skip{position:fixed;left:-999px;top:8px;z-index:100;background:var(--accent);color:var(--ink);
+    padding:10px 16px;border-radius:2px;font-family:var(--font-mono);font-size:12px;text-decoration:none;}
+  .skip:focus{left:8px;}
+  @media (pointer:coarse){ .cursor-dot,.cursor-ring{display:none;} }
+  @media (prefers-reduced-motion:reduce){ body{cursor:auto;} .cursor-dot,.cursor-ring{display:none;} .kc{transition:none;} }
+
+  /* hero */
+  .wrap{padding:0 clamp(1.4rem,6vw,5rem);max-width:1500px;margin:0 auto;}
+  .hero{min-height:100vh;display:flex;flex-direction:column;justify-content:center;
+    max-width:760px;padding-top:4rem;}
+  .eyebrow{font-family:var(--font-mono);font-size:clamp(11px,1vw,13px);letter-spacing:0.28em;
+    color:var(--accent);text-transform:uppercase;margin-bottom:1.8rem;
+    transition:color 1s var(--ease);}
+  .eyebrow .tick{color:var(--muted);}
+  .hero h1{font-family:var(--font-display);font-weight:600;font-size:clamp(2.4rem,8.5vw,6.5rem);
+    line-height:0.95;letter-spacing:-0.035em;white-space:nowrap;}
+  .hero .tagline{margin-top:1.6rem;font-size:clamp(1.5rem,4.4vw,3rem);line-height:1.08;letter-spacing:-0.01em;}
+  .tagline .code{font-family:var(--font-mono);font-weight:500;color:var(--signal);font-size:0.86em;}
+  .tagline .free{font-family:var(--font-display);font-style:italic;font-weight:500;color:var(--ember);}
+  .hero p.lede{margin-top:2rem;max-width:440px;font-size:clamp(1rem,1.4vw,1.15rem);
+    line-height:1.65;color:rgba(234,230,220,0.78);}
+  .scrollcue{margin-top:3rem;font-family:var(--font-mono);font-size:11px;letter-spacing:0.28em;
+    color:var(--muted);text-transform:uppercase;display:flex;align-items:center;gap:0.7rem;}
+  .scrollcue::before{content:"";width:34px;height:1px;background:var(--accent);transform-origin:left;
+    animation:line 2.6s var(--ease) infinite;}
+  @keyframes line{0%,100%{transform:scaleX(0.3);opacity:0.4;}50%{transform:scaleX(1);opacity:1;}}
+
+  /* chapters */
+  .chapter{min-height:100vh;display:flex;align-items:center;}
+  .chapter .col{max-width:560px;}
+  .chapter.flip{margin-left:auto;text-align:right;}
+  .chapter.flip .col{margin-left:auto;}
+  .chapter .meta{font-family:var(--font-mono);font-size:12px;letter-spacing:0.2em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:1.6rem;display:flex;gap:0.9rem;align-items:baseline;
+    transition:color 1s var(--ease);}
+  .chapter.flip .meta{justify-content:flex-end;}
+  .chapter .meta .when{color:var(--bone);}
+  .chapter .meta .coord{color:var(--muted);font-size:11px;}
+  .chapter h2{font-family:var(--font-display);font-weight:600;font-size:clamp(2.2rem,6vw,4.2rem);
+    line-height:1.0;letter-spacing:-0.02em;margin-bottom:1.3rem;}
+  .chapter h2 em{font-style:italic;color:var(--accent);transition:color 1s var(--ease);}
+  .chapter p{font-size:clamp(1rem,1.4vw,1.2rem);line-height:1.7;color:rgba(234,230,220,0.78);max-width:460px;}
+  .chapter.flip p{margin-left:auto;}
+  .manifest{list-style:none;margin-top:1.8rem;font-family:var(--font-mono);font-size:13px;}
+  .manifest li{padding:0.75rem 0;border-top:1px solid rgba(234,230,220,0.12);color:var(--bone);
+    display:flex;gap:0.8rem;}
+  .chapter.flip .manifest li{flex-direction:row-reverse;}
+  .manifest li .idx{color:var(--accent);transition:color 1s var(--ease);}
+
+  /* footer */
+  footer{min-height:88vh;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;gap:2rem;}
+  footer .big{font-family:var(--font-display);font-weight:600;font-size:clamp(3rem,11vw,8rem);
+    line-height:0.9;letter-spacing:-0.03em;}
+  footer .big em{font-style:italic;color:var(--accent);transition:color 1s var(--ease);}
+  .links{display:flex;gap:0.6rem;flex-wrap:wrap;justify-content:center;font-family:var(--font-mono);}
+  .links a{color:var(--bone);text-decoration:none;font-size:13px;letter-spacing:0.06em;padding:11px 20px;
+    border:1px solid rgba(234,230,220,0.18);border-radius:2px;transition:all 0.4s var(--ease);}
+  .links a:hover{background:var(--accent);color:var(--ink);border-color:var(--accent);}
+  .links a span{color:var(--muted);}
+
+  /* reveal */
+  .rv{opacity:0;transform:translateY(34px);filter:blur(4px);
+    transition:opacity 1s var(--ease),transform 1s var(--ease),filter 1s var(--ease);}
+  .rv.in{opacity:1;transform:none;filter:none;}
+  .hero .rv:nth-child(1){transition-delay:1.5s;} .hero .rv:nth-child(2){transition-delay:1.65s;}
+  .hero .rv:nth-child(3){transition-delay:1.8s;}  .hero .rv:nth-child(4){transition-delay:1.95s;}
+  .hero .rv:nth-child(5){transition-delay:2.1s;}
+
+  :focus-visible{outline:2px solid var(--accent);outline-offset:3px;}
+  @media(prefers-reduced-motion:reduce){
+    *{animation:none!important;}
+    .rv{opacity:1;transform:none;filter:none;transition:none;}
+  }
+</style>
+</head>
+<body class="world-tech">
+  <a class="skip" href="#yaptiklarim">İçeriğe geç</a>
+  <div id="bg"></div>
+  <canvas id="scene"></canvas>
+  <div class="scrim"></div>
+  <div class="grain"></div>
+  <div class="vignette"></div>
+
+  <div class="statusbar">
+    <div class="brand"><span class="dot"></span>M. BERK SAM</div>
+    <nav class="nav">
+      <a href="#yaptiklarim">Yaptıklarım</a>
+      <a href="#simdi">Şimdi</a>
+      <a href="#nomad">Nomad</a>
+      <a href="#gelecek">Gelecek</a>
+      <a href="#iletisim">İletişim</a>
+    </nav>
+    <div class="clock"><span id="utc">--:--:--</span><span class="loc"> UTC · <span id="loc">IST</span></span></div>
+  </div>
+
+  <div class="content">
+    <div class="wrap">
+      <header class="hero">
+        <div class="eyebrow rv">41.0082° N <span class="tick">—</span> 28.9784° E <span class="tick">·</span> İSTANBUL</div>
+        <h1 class="rv kinetic"><span class="kline">M. Berk SAM</span></h1>
+        <div class="tagline rv"><span class="code">Kod &amp; AI.</span> <span class="free">Sınırsız bir hayat.</span></div>
+        <p class="lede rv">Ürün kuruyorum, dünyayı geziyorum. Her node bir şehir, her bağlantı bir iş — ofisim, sinyalin ulaştığı her yer.</p>
+        <div class="scrollcue rv">Aşağı in</div>
+      </header>
+    </div>
+
+    <div class="wrap">
+      <section class="chapter" id="yaptiklarim">
+        <div class="col">
+          <div class="meta rv"><span class="when">Geçmiş</span><span>Ne Yaptım</span><span class="coord">// origin: IST</span></div>
+          <h2 class="rv">Fikirleri çalışan <em>sistemlere</em> çevirdim.</h2>
+          <p class="rv">Yazılım ve AI tarafında sıfırdan kurduğum ürünler — koddan canlı, ölçeklenen sistemlere.</p>
+          <ul class="manifest">
+            <li class="rv"><span class="idx">→</span> Geliştirdiğin yazılım / AI ürünleri</li>
+            <li class="rv"><span class="idx">→</span> Çözdüğün en zor teknik problem</li>
+            <li class="rv"><span class="idx">→</span> Ana stack & teknolojiler</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <div class="wrap">
+      <section class="chapter flip" id="simdi">
+        <div class="col">
+          <div class="meta rv"><span class="coord">// live</span><span>Ne Yapıyorum</span><span class="when">Şimdi</span></div>
+          <h2 class="rv">Şu an <em>AI'ın</em> ucunda inşa ediyorum.</h2>
+          <p class="rv">Bugünün odağı: üzerinde çalıştığın projeler — bir kafeden, başka bir kıtadan, fark etmez.</p>
+          <ul class="manifest">
+            <li class="rv"><span class="idx">→</span> Aktif proje / rol</li>
+            <li class="rv"><span class="idx">→</span> Derinleştiğin AI alanı</li>
+            <li class="rv"><span class="idx">→</span> Uzaktan çalışma kurgun</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <div class="wrap">
+      <section class="chapter" id="nomad">
+        <div class="col">
+          <div class="meta rv"><span class="when">Harita</span><span>Nomad Life</span><span class="coord">// 12 şehir</span></div>
+          <h2 class="rv">Ofisim, <em>bağlantının</em> olduğu her yer.</h2>
+          <p class="rv">Aynı rotalar artık uçuş hatları. Mekan bağımsızlığı, gezdiğin şehirler, özgürlük.</p>
+          <ul class="manifest">
+            <li class="rv"><span class="idx">→</span> Yaşadığın / gezdiğin şehirler</li>
+            <li class="rv"><span class="idx">→</span> Nomad hayatın sana kattığı</li>
+            <li class="rv"><span class="idx">→</span> Bir sonraki durak</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <div class="wrap">
+      <section class="chapter flip" id="gelecek">
+        <div class="col">
+          <div class="meta rv"><span class="coord">// ??</span><span>Ne Yapmak İstiyorum</span><span class="when">Gelecek</span></div>
+          <h2 class="rv">Teknolojiyi ve <em>özgürlüğü</em> birleştirmek.</h2>
+          <p class="rv">Sınırsız bir gelecek — kurmak istediğin, ulaşmak istediğin yer ve bırakmak istediğin iz.</p>
+          <ul class="manifest">
+            <li class="rv"><span class="idx">→</span> Hayalindeki proje</li>
+            <li class="rv"><span class="idx">→</span> Ulaşmak istediğin etki</li>
+          </ul>
+        </div>
+      </section>
+    </div>
+
+    <footer id="iletisim">
+      <div class="big rv">Hadi <em>bağlanalım.</em></div>
+      <div class="links rv">
+        <a href="mailto:mail@ornek.com"><span>↳</span> E-posta</a>
+        <a href="#"><span>↳</span> LinkedIn</a>
+        <a href="#"><span>↳</span> GitHub</a>
+        <a href="#"><span>↳</span> X</a>
+      </div>
+    </footer>
+  </div>
+
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+}}
+</script>
+<script type="module">
+import * as THREE from 'three';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const canvas = document.getElementById('scene');
+const renderer = new THREE.WebGLRenderer({ canvas, antialias:true, alpha:true });
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setSize(innerWidth, innerHeight);
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.0;
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(48, innerWidth/innerHeight, 0.1, 100);
+camera.position.set(0,0,9);
+
+const world = new THREE.Group();
+world.rotation.z = 0.32;
+scene.add(world);
+const R = 3;
+let baseX = 2.0;
+function placeWorld(){ baseX = innerWidth > 900 ? 2.2 : 0; world.position.y = innerWidth > 900 ? 0 : 1.2; }
+placeWorld();
+world.position.x = baseX;
+
+const TECH  = { dot:new THREE.Color('#4DE1C1'), arc:new THREE.Color('#5B8CFF'), city:new THREE.Color('#9BF5E2') };
+const NOMAD = { dot:new THREE.Color('#FF8A4C'), arc:new THREE.Color('#FF5E8A'), city:new THREE.Color('#FFD9A0') };
+
+// ---------- particle morph system: 5 shapes the globe scrolls through ----------
+const DOTS = 6000, NS = 5;   // sphere · grid · torus · sphere · galaxy
+const scatter = new Float32Array(DOTS*3), delay = new Float32Array(DOTS), flick = new Float32Array(DOTS), nodeFlag = new Float32Array(DOTS);
+function makeShapes(){
+  const s=[]; for(let k=0;k<NS;k++) s.push(new Float32Array(DOTS*3));
+  const PHI=Math.PI*(3-Math.sqrt(5));
+  // node/link graph for shape 1 (system architecture): hubs + nearest-neighbour edges
+  const NH=16, hubs=[];
+  for(let k=0;k<NH;k++){ const u=Math.random(), v=Math.random(), th=u*Math.PI*2, ph=Math.acos(2*v-1), rr=1.3+Math.random()*1.3;
+    hubs.push([rr*Math.sin(ph)*Math.cos(th), rr*Math.sin(ph)*Math.sin(th), rr*Math.cos(ph)]); }
+  const edges=[], eseen=new Set();
+  for(let a=0;a<NH;a++){ const near=hubs.map((g,b)=>({b,d:(g[0]-hubs[a][0])**2+(g[1]-hubs[a][1])**2+(g[2]-hubs[a][2])**2}))
+      .filter(o=>o.b!==a).sort((x,y)=>x.d-y.d);
+    for(let n=0;n<2;n++){ const b=near[n].b, key=a<b?a+'-'+b:b+'-'+a; if(eseen.has(key))continue; eseen.add(key); edges.push([a,b]); } }
+  // tilted orbit rings for shape 3 (internet / satellite connectivity)
+  const rotX=(p,a)=>{const c=Math.cos(a),s=Math.sin(a);return [p[0],p[1]*c-p[2]*s,p[1]*s+p[2]*c];};
+  const rotZ=(p,a)=>{const c=Math.cos(a),s=Math.sin(a);return [p[0]*c-p[1]*s,p[0]*s+p[1]*c,p[2]];};
+  const RINGS=3, ringBasis=[];
+  for(let k=0;k<RINGS;k++){ const ax=0.5+k*1.05, az=k*0.8;
+    ringBasis.push({u:rotZ(rotX([1,0,0],ax),az), v:rotZ(rotX([0,1,0],ax),az)}); }
+  for(let i=0;i<DOTS;i++){
+    // 0 — sphere (the world)
+    const y=1-(i/(DOTS-1))*2, rad=Math.sqrt(1-y*y), th=PHI*i;
+    s[0][i*3]=Math.cos(th)*rad*R; s[0][i*3+1]=y*R; s[0][i*3+2]=Math.sin(th)*rad*R;
+    // 1 — node/link network (systems built): ~1/3 dots are bright nodes, rest form the links
+    if(i%3===0){ const g=hubs[i%NH]; nodeFlag[i]=1;
+      s[1][i*3]=g[0]+(Math.random()-0.5)*0.22; s[1][i*3+1]=g[1]+(Math.random()-0.5)*0.22; s[1][i*3+2]=g[2]+(Math.random()-0.5)*0.22;
+    } else { const e=edges[i%edges.length], A=hubs[e[0]], B=hubs[e[1]], tt=Math.random();
+      s[1][i*3]=A[0]+(B[0]-A[0])*tt+(Math.random()-0.5)*0.05;
+      s[1][i*3+1]=A[1]+(B[1]-A[1])*tt+(Math.random()-0.5)*0.05;
+      s[1][i*3+2]=A[2]+(B[2]-A[2])*tt+(Math.random()-0.5)*0.05; }
+    // 2 — torus / donut (continuous, ongoing work) — faces the camera (xy-plane, thin in z)
+    const th2=Math.random()*Math.PI*2, ph2=Math.random()*Math.PI*2, ring=2.0, tr=0.95, rt=ring+tr*Math.cos(ph2);
+    s[2][i*3]=rt*Math.cos(th2); s[2][i*3+1]=rt*Math.sin(th2); s[2][i*3+2]=tr*Math.sin(ph2);
+    // 3 — orbital connectivity (internet): central hub + tilted satellite rings
+    if(i%7===0){ s[3][i*3]=(Math.random()-0.5)*0.7; s[3][i*3+1]=(Math.random()-0.5)*0.7; s[3][i*3+2]=(Math.random()-0.5)*0.7; }
+    else { const rb=ringBasis[i%RINGS], a=Math.random()*Math.PI*2, rr=2.5+(Math.random()-0.5)*0.16, ca=Math.cos(a), sa=Math.sin(a), jt=0.05;
+      s[3][i*3]  =rr*(ca*rb.u[0]+sa*rb.v[0])+(Math.random()-0.5)*jt;
+      s[3][i*3+1]=rr*(ca*rb.u[1]+sa*rb.v[1])+(Math.random()-0.5)*jt;
+      s[3][i*3+2]=rr*(ca*rb.u[2]+sa*rb.v[2])+(Math.random()-0.5)*jt; }
+    // 4 — galaxy spiral (the open future)
+    const arms=3, arm=i%arms, f=i/DOTS, radius=f*4.6, ang=f*Math.PI*7+arm*(Math.PI*2/arms), spr=(Math.random()-0.5)*0.6;
+    s[4][i*3]=Math.cos(ang)*radius+spr; s[4][i*3+1]=Math.sin(ang)*radius+spr; s[4][i*3+2]=(Math.random()-0.5)*0.5*(1.1-f);
+    // scatter start (intro) + per-particle randoms
+    const sr=7+Math.random()*6, t1=Math.random()*Math.PI*2, p1=Math.acos(2*Math.random()-1);
+    scatter[i*3]=sr*Math.sin(p1)*Math.cos(t1); scatter[i*3+1]=sr*Math.sin(p1)*Math.sin(t1); scatter[i*3+2]=sr*Math.cos(p1);
+    delay[i]=Math.random(); flick[i]=Math.random();
+  }
+  return s;
+}
+const shapes=makeShapes();
+const dotGeo=new THREE.BufferGeometry();
+dotGeo.setAttribute('position', new THREE.BufferAttribute(shapes[0].slice(),3)); // count/bounds; real pos computed in shader
+dotGeo.setAttribute('aFrom', new THREE.BufferAttribute(shapes[0].slice(),3));
+dotGeo.setAttribute('aTo',   new THREE.BufferAttribute(shapes[1].slice(),3));
+dotGeo.setAttribute('aScatter', new THREE.BufferAttribute(scatter,3));
+dotGeo.setAttribute('aDelay', new THREE.BufferAttribute(delay,1));
+dotGeo.setAttribute('aFlick', new THREE.BufferAttribute(flick,1));
+dotGeo.setAttribute('aNode', new THREE.BufferAttribute(nodeFlag,1));
+const dotU={ uColor:{value:TECH.dot.clone()}, uTime:{value:0}, uIntro:{value:0}, uBlend:{value:0}, uNet:{value:0} };
+const dotMat=new THREE.ShaderMaterial({ uniforms:dotU, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  vertexShader:`uniform float uTime,uIntro,uBlend,uNet; attribute vec3 aFrom,aTo,aScatter; attribute float aDelay,aFlick,aNode;
+    varying float vTw,vPulse;
+    void main(){ vec3 shape=mix(aFrom,aTo,uBlend);
+      float l=clamp((uIntro-aDelay*0.5)/0.5,0.0,1.0); float e=l*l*(3.0-2.0*l);
+      vec3 p=mix(aScatter,shape,e);
+      p+=normalize(p+0.0001)*sin(uTime*0.9+aFlick*6.2831)*0.025;     // subtle life
+      vTw=0.5+0.5*sin(uTime*1.5+aFlick*6.2831);
+      // live-system pulse (only while in the network shape): a signal sweeps through, nodes beat
+      float wave=0.5+0.5*sin(uTime*2.4 - shape.x*1.9 - shape.y*1.1);
+      float beat=pow(0.5+0.5*sin(uTime*3.2),3.0);
+      vPulse=mix(wave, max(wave,beat), aNode)*uNet;          // glow only — no movement
+      vec4 mv=modelViewMatrix*vec4(p,1.0);
+      gl_PointSize=(1.5+vTw*1.0)*(11.0/-mv.z)*(0.35+0.65*e); gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`uniform vec3 uColor; varying float vTw,vPulse; void main(){ float d=length(gl_PointCoord-0.5);
+    if(d>0.5)discard; float a=smoothstep(0.5,0.0,d);
+    vec3 col=uColor*(0.65+vTw*0.55) + uColor*vPulse*0.35;         // pulse adds a soft glow
+    gl_FragColor=vec4(col, a*(0.85+vPulse*0.15)); }`});
+const dots=new THREE.Points(dotGeo, dotMat);
+dots.frustumCulled=false;   // shape morphs beyond the initial bounds (galaxy), keep it always drawn
+world.add(dots);
+
+// swap the two active morph targets only when the stage changes
+let curStage=-1;
+function setStage(stage){ if(stage===curStage)return; curStage=stage;
+  dotGeo.attributes.aFrom.array.set(shapes[stage]);
+  dotGeo.attributes.aTo.array.set(shapes[Math.min(stage+1,NS-1)]);
+  dotGeo.attributes.aFrom.needsUpdate=true; dotGeo.attributes.aTo.needsUpdate=true; }
+
+// ---------- cities ----------
+const cities=[[41.0,28.9],[-8.6,115.1],[38.7,-9.1],[35.6,139.6],[40.7,-74.0],[-33.9,18.4],
+  [13.7,100.5],[52.5,13.4],[25.2,55.2],[19.4,-99.1],[64.1,-21.9],[-33.8,151.2]];
+function ll(lat,lon,r){const ph=(90-lat)*Math.PI/180,th=(lon+180)*Math.PI/180;
+  return new THREE.Vector3(-r*Math.sin(ph)*Math.cos(th), r*Math.cos(ph), r*Math.sin(ph)*Math.sin(th));}
+const cv=cities.map(c=>ll(c[0],c[1],R));
+const cityGeo=new THREE.BufferGeometry();
+cityGeo.setAttribute('position',new THREE.BufferAttribute(new Float32Array(cv.flatMap(v=>[v.x,v.y,v.z])),3));
+const cityU={ uColor:{value:TECH.city.clone()}, uTime:{value:0}, uIntro:{value:0}, uFade:{value:1} };
+const cityMat=new THREE.ShaderMaterial({ uniforms:cityU, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  vertexShader:`uniform float uTime,uIntro,uFade; varying float vP; void main(){ vP=0.6+0.4*sin(uTime*3.0+position.z*5.0);
+    vec4 mv=modelViewMatrix*vec4(position,1.0);
+    gl_PointSize=(6.0+vP*4.0)*(10.0/-mv.z)*clamp(uIntro,0.0,1.0)*uFade; gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`uniform vec3 uColor; varying float vP; void main(){ float d=length(gl_PointCoord-0.5);
+    if(d>0.5)discard; float a=smoothstep(0.5,0.0,d); gl_FragColor=vec4(uColor, a*vP); }`});
+world.add(new THREE.Points(cityGeo, cityMat));
+
+// ---------- great-circle arcs with draw-on reveal ----------
+const arcGroup=new THREE.Group(); world.add(arcGroup);
+const arcU={ uColor:{value:TECH.arc.clone()}, uReveal:{value:0}, uFade:{value:1} };
+const arcMat=new THREE.ShaderMaterial({ uniforms:arcU, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  vertexShader:`attribute float aT,aSeed; varying float vT,vSeed;
+    void main(){ vT=aT; vSeed=aSeed; gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0); }`,
+  fragmentShader:`uniform vec3 uColor; uniform float uReveal,uFade; varying float vT,vSeed;
+    void main(){ float draw=clamp((uReveal-vSeed)/0.25,0.0,1.0); float vis=step(vT,draw);
+      float f=sin(3.14159265*vT); f*=f; float a=f*0.6*vis*uFade; if(a<0.01)discard; gl_FragColor=vec4(uColor,a); }`});
+const SEG=70;
+function arcDesc(a,b){const om=Math.acos(THREE.MathUtils.clamp(a.dot(b)/(R*R),-1,1));
+  return {a,b,om,h:Math.min(0.08+om*0.16,0.40)};}
+function arcPoint(d,t,o){const s=Math.sin(d.om)||1e-5,w1=Math.sin((1-t)*d.om)/s,w2=Math.sin(t*d.om)/s;
+  o.copy(d.a).multiplyScalar(w1).addScaledVector(d.b,w2); return o.normalize().multiplyScalar(R*(1+d.h*Math.sin(Math.PI*t)));}
+function buildArc(d,seed){const pos=new Float32Array((SEG+1)*3),ts=new Float32Array(SEG+1),sd=new Float32Array(SEG+1),v=new THREE.Vector3();
+  for(let i=0;i<=SEG;i++){const t=i/SEG;arcPoint(d,t,v);pos[i*3]=v.x;pos[i*3+1]=v.y;pos[i*3+2]=v.z;ts[i]=t;sd[i]=seed;}
+  const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));
+  g.setAttribute('aT',new THREE.BufferAttribute(ts,1));g.setAttribute('aSeed',new THREE.BufferAttribute(sd,1));
+  arcGroup.add(new THREE.Line(g,arcMat));}
+const arcs=[],seen=new Set();
+for(let i=0;i<cv.length;i++){
+  const near=cv.map((v,j)=>({j,d:cv[i].distanceTo(v)})).filter(o=>o.j!==i).sort((a,b)=>a.d-b.d);
+  for(let n=0;n<2;n++){const j=near[n].j,key=i<j?i+'-'+j:j+'-'+i; if(seen.has(key))continue; seen.add(key);
+    const d=arcDesc(cv[i],cv[j]); arcs.push(d); buildArc(d, arcs.length/12*0.7);}
+}
+
+// ---------- travelers ----------
+const TPER=2, TRAIL=9, SPACING=0.015;
+const travN=arcs.length*TPER*TRAIL, travPos=new Float32Array(travN*3), travLife=new Float32Array(travN);
+const travGeo=new THREE.BufferGeometry();
+travGeo.setAttribute('position',new THREE.BufferAttribute(travPos,3));
+travGeo.setAttribute('aLife',new THREE.BufferAttribute(travLife,1));
+const travU={ uColor:{value:TECH.arc.clone()}, uIntro:{value:0}, uFade:{value:1} };
+const travMat=new THREE.ShaderMaterial({ uniforms:travU, transparent:true, depthWrite:false, blending:THREE.AdditiveBlending,
+  vertexShader:`uniform float uIntro,uFade; attribute float aLife; varying float vL; void main(){ vL=aLife;
+    vec4 mv=modelViewMatrix*vec4(position,1.0);
+    gl_PointSize=(1.5+9.0*aLife)*(10.0/-mv.z)*clamp((uIntro-0.7)/0.3,0.0,1.0)*uFade; gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`uniform vec3 uColor; varying float vL; void main(){ float d=length(gl_PointCoord-0.5); if(d>0.5)discard;
+    float a=smoothstep(0.5,0.0,d)*vL*vL; gl_FragColor=vec4(uColor*(0.6+0.7*vL), a); }`});
+world.add(new THREE.Points(travGeo,travMat));
+const tState=[]; for(let i=0;i<arcs.length;i++)for(let k=0;k<TPER;k++)
+  tState.push({d:arcs[i], t:(k/TPER)+Math.random()*0.3, sp:0.04+Math.random()*0.07});
+for(let i=0;i<tState.length;i++)for(let j=0;j<TRAIL;j++) travLife[i*TRAIL+j]=1.0 - j/TRAIL; // head bright -> tail fades
+
+// ---------- stars ----------
+const SN=1200, spo=new Float32Array(SN*3), ssz=new Float32Array(SN), sph=new Float32Array(SN);
+for(let i=0;i<SN;i++){ const r=18+Math.random()*32, t=Math.random()*Math.PI*2, p=Math.acos(2*Math.random()-1);
+  spo[i*3]=r*Math.sin(p)*Math.cos(t); spo[i*3+1]=r*Math.sin(p)*Math.sin(t); spo[i*3+2]=r*Math.cos(p);
+  ssz[i]=(Math.random()<0.9 ? 0.45+Math.random()*0.7 : 1.8+Math.random()*1.6);   // mostly faint, a few bright
+  sph[i]=Math.random()*6.2831; }
+const starGeo=new THREE.BufferGeometry();
+starGeo.setAttribute('position',new THREE.BufferAttribute(spo,3));
+starGeo.setAttribute('aSize',new THREE.BufferAttribute(ssz,1));
+starGeo.setAttribute('aPhase',new THREE.BufferAttribute(sph,1));
+const starU={ uTime:{value:0} };
+const starMat=new THREE.ShaderMaterial({ uniforms:starU, transparent:true, depthWrite:false,
+  vertexShader:`uniform float uTime; attribute float aSize,aPhase; varying float vT;
+    void main(){ vT=0.55+0.45*sin(uTime*1.1+aPhase);
+      vec4 mv=modelViewMatrix*vec4(position,1.0);
+      gl_PointSize=aSize*(110.0/-mv.z)*(0.6+0.4*vT); gl_Position=projectionMatrix*mv; }`,
+  fragmentShader:`varying float vT; void main(){ float d=length(gl_PointCoord-0.5); if(d>0.5)discard;
+    float a=smoothstep(0.5,0.0,d); gl_FragColor=vec4(vec3(0.88,0.91,1.0), a*(0.45+0.55*vT)); }`});
+const stars=new THREE.Points(starGeo,starMat);
+scene.add(stars);
+
+// ---------- post ----------
+const composer=new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene,camera));
+const bloom=new UnrealBloomPass(new THREE.Vector2(innerWidth,innerHeight), 0.8, 0.65, 0.42);
+composer.addPass(bloom);
+
+// ---------- world switch ----------
+let morph=0,targetMorph=0;
+const body=document.body, locEl=document.getElementById('loc');
+function setWorld(w){const n=w==='nomad'; targetMorph=n?1:0;
+  body.classList.toggle('world-nomad',n); body.classList.toggle('world-tech',!n);
+  locEl.textContent = n ? 'DPS' : 'IST';}   // world still switches automatically on scroll
+
+const io=new IntersectionObserver(es=>es.forEach(e=>{
+  if(e.target.classList.contains('rv')){ if(e.isIntersecting) e.target.classList.add('in'); return; }
+  if(e.isIntersecting && e.intersectionRatio>0.5 && e.target.dataset.world) setWorld(e.target.dataset.world);
+}),{threshold:[0.15,0.5]});
+document.querySelectorAll('.rv').forEach(s=>io.observe(s));
+// section -> world (3rd & 4th chapters are nomad)
+const chapters=[...document.querySelectorAll('.chapter')];
+chapters.forEach((c,i)=>{ c.dataset.world = i>=2 ? 'nomad' : 'tech'; io.observe(c); });
+
+// shape sits opposite the text: left-aligned text -> shape right, right-aligned (flip) -> shape left
+const sideEls=[{el:document.querySelector('.hero'), side:'r'}];
+chapters.forEach(c=>sideEls.push({el:c, side:c.classList.contains('flip')?'l':'r'}));
+sideEls.push({el:document.querySelector('footer'), side:'c'});
+// cache each section's document-space top/height so the render loop does ZERO forced layout
+// (recomputed on resize + after load; document offsets don't change on scroll)
+function cacheSides(){ for(let i=0;i<sideEls.length;i++){ const s=sideEls[i];
+  const r=s.el.getBoundingClientRect(); s.top=r.top+scrollY; s.h=r.height; } }
+cacheSides();
+addEventListener('load', cacheSides);
+
+// ---------- clock ----------
+const utcEl=document.getElementById('utc');
+setInterval(()=>{ const d=new Date(); utcEl.textContent=d.toISOString().slice(11,19); },1000);
+
+// ---------- cinematic nav: dive into the scene, jump section, emerge ----------
+const NAV_IN=1.0, NAV_OUT=1.3; let nav=null; const content=document.querySelector('.content');
+document.querySelectorAll('.nav a').forEach(a=>a.addEventListener('click',ev=>{
+  ev.preventDefault(); const el=document.querySelector(a.getAttribute('href')); if(!el||nav) return;
+  if(reduced){ el.scrollIntoView(); return; }
+  const sEntry=sideEls.find(s=>s.el===el);
+  const toX = sEntry ? (sEntry.side==='l'?-baseX : sEntry.side==='c'?0 : baseX) : 0;
+  nav={ phase:'in', start:performance.now()/1000, fromZ:camera.position.z, toX,
+        targetY: el.getBoundingClientRect().top + window.scrollY };
+}));
+
+// ---------- input / resize ----------
+const mouse={x:0,y:0};
+addEventListener('pointermove',e=>{mouse.x=e.clientX/innerWidth-0.5;mouse.y=e.clientY/innerHeight-0.5;});
+addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+  renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);placeWorld();cacheSides();});
+
+// ---------- 2026 enhancements: kinetic hero · custom cursor · magnetic links ----------
+const fine = matchMedia('(hover:hover) and (pointer:fine)').matches;
+// split the hero headline into per-letter spans (spaces preserved as plain text)
+document.querySelectorAll('.kinetic .kline').forEach(line=>{
+  const chars=[...line.textContent]; line.textContent='';
+  chars.forEach(ch=>{ if(ch===' '){ line.appendChild(document.createTextNode(' ')); return; }
+    const s=document.createElement('span'); s.className='kc'; s.textContent=ch; line.appendChild(s); });
+});
+const kcs=[...document.querySelectorAll('.kc')];
+if(fine && !reduced && kcs.length){
+  // letters near the cursor gain weight/optical-size and lift — Fraunces variable-font kinetic type
+  let kx=-1e4, ky=-1e4, kq=false;
+  const kineticUpdate=()=>{ kq=false;
+    for(let i=0;i<kcs.length;i++){ const s=kcs[i], r=s.getBoundingClientRect();
+      const t=Math.max(0, 1-Math.hypot(kx-(r.left+r.width*0.5), ky-(r.top+r.height*0.5))/240), tt=t*t;
+      s.style.fontVariationSettings="'opsz' "+(30+tt*100).toFixed(0)+", 'wght' "+(440+tt*260).toFixed(0);
+      s.style.transform="translateY("+(-tt*7).toFixed(1)+"px)"; } };
+  addEventListener('pointermove',e=>{ kx=e.clientX; ky=e.clientY; if(!kq){kq=true; requestAnimationFrame(kineticUpdate);} });
+}
+// custom cursor + magnetic links (desktop, motion allowed)
+if(fine && !reduced){
+  // keep the native cursor (OS-composited, never stutters under WebGL load); the ring is a soft trailing halo
+  const ring=document.createElement('div'); ring.className='cursor-ring';
+  document.body.appendChild(ring);
+  let rx=innerWidth/2, ry=innerHeight/2, mx=rx, my=ry;
+  addEventListener('pointermove',e=>{ mx=e.clientX; my=e.clientY; });
+  (function ringLoop(){ rx+=(mx-rx)*0.35; ry+=(my-ry)*0.35;
+    ring.style.transform="translate("+rx+"px,"+ry+"px) translate(-50%,-50%)"; requestAnimationFrame(ringLoop); })();
+  document.querySelectorAll('a,button').forEach(el=>{
+    el.addEventListener('pointerenter',()=>ring.classList.add('big'));
+    el.addEventListener('pointerleave',()=>ring.classList.remove('big')); });
+  document.querySelectorAll('.nav a, .links a').forEach(el=>{
+    el.addEventListener('pointermove',e=>{ const r=el.getBoundingClientRect();
+      el.style.transform="translate("+((e.clientX-r.left-r.width*0.5)*0.3).toFixed(1)+"px,"+((e.clientY-r.top-r.height*0.5)*0.3).toFixed(1)+"px)"; });
+    el.addEventListener('pointerleave',()=>{ el.style.transform=''; }); });
+}
+
+// ---------- loop ----------
+// cinematic camera distance per stage: sphere · grid · torus · sphere · galaxy
+const camStops=[9.0, 8.2, 7.6, 9.0, 13.0];
+function sampleStops(arr,p){ const i=THREE.MathUtils.clamp(Math.floor(p),0,arr.length-2);
+  let f=THREE.MathUtils.clamp(p-i,0,1); f=f*f*(3.0-2.0*f); return arr[i]+(arr[i+1]-arr[i])*f; }
+const easeIO=k=>k<0.5?4*k*k*k:1-Math.pow(-2*k+2,3)/2;   // smooth ease-in-out for nav
+const tmp=new THREE.Vector3(), clock=new THREE.Clock();
+let elapsed=0, pSmooth=0, lookX=0, navTwist=0, running=true;
+// pause the render loop while the tab is hidden; on resume re-anchor the clock (keep elapsedTime,
+// just reset the delta reference) so dt/t don't leap forward and snap the animation
+document.addEventListener('visibilitychange',()=>{
+  if(document.hidden) return;
+  const e=clock.elapsedTime; clock.getDelta(); clock.elapsedTime=e;   // always re-anchor: keep elapsedTime, reset the delta reference
+  if(!running){ running=true; requestAnimationFrame(animate); }       // only restart the loop if it actually stopped
+});
+function animate(){
+  if(document.hidden){ running=false; return; }
+  const dt=Math.min(clock.getDelta(),0.1); elapsed+=dt; const t=clock.elapsedTime;
+  // nav timing, computed once per frame so the morph, camera, look and bloom all share one eased clock
+  let navK=0, navF=0, navDepth=0;
+  if(nav){ const el=performance.now()/1000 - nav.start; const dur=nav.phase==='in'?NAV_IN:NAV_OUT;
+    navK=Math.min(el/dur,1); navF=easeIO(navK); navDepth = nav.phase==='in' ? navF : 1.0-navF; }
+  const intro = reduced ? 1 : Math.min(elapsed/2.2,1);
+  dotU.uIntro.value=intro; cityU.uIntro.value=intro; travU.uIntro.value=intro;
+  arcU.uReveal.value = reduced ? 1.2 : Math.min(Math.max((elapsed-0.8)/2.0,0)*1.2,1.2);
+  dotU.uTime.value=t; cityU.uTime.value=t;
+
+  // scroll-driven shape morph: shape i is settled when section i is centered (scrollY = i*viewport)
+  // 0 sphere · 1 grid · 2 torus · 3 sphere · 4 galaxy
+  const pTarget=THREE.MathUtils.clamp(scrollY/innerHeight, 0, NS-1);
+  // during the zoom-out we drive the morph explicitly on the nav clock so the shape is fully settled
+  // exactly when the dolly finishes; otherwise an exponential (frame-rate-independent) approach to scroll target
+  if(nav && nav.phase==='out'){ pSmooth = nav.fromP + (nav.toP-nav.fromP)*navF; }
+  else { pSmooth = THREE.MathUtils.damp(pSmooth, pTarget, 8.36, dt); }
+  let stage=THREE.MathUtils.clamp(Math.floor(pSmooth),0,NS-2);
+  let b=pSmooth-stage; b=b*b*(3.0-2.0*b);
+  setStage(stage); dotU.uBlend.value=b;
+  dotU.uNet.value = Math.max(0, 1-Math.abs(pSmooth-1));   // live-system pulse only near the network shape
+  // flight routes/cities only on the hero globe (stage 0); the nomad stage is now the orbital shape
+  const gw=Math.max(0, 1-Math.abs(pSmooth-0));
+  arcU.uFade.value=gw; cityU.uFade.value=gw; travU.uFade.value=gw;
+
+  morph = THREE.MathUtils.damp(morph, targetMorph, 2.45, dt);
+  dotU.uColor.value.copy(TECH.dot).lerp(NOMAD.dot,morph);
+  cityU.uColor.value.copy(TECH.city).lerp(NOMAD.city,morph);
+  arcU.uColor.value.copy(TECH.arc).lerp(NOMAD.arc,morph);
+  travU.uColor.value.copy(TECH.arc).lerp(NOMAD.arc,morph);
+
+  const sm=THREE.MathUtils.lerp(1.5,0.7,morph);
+  for(let i=0;i<tState.length;i++){ const s=tState[i]; s.t+=s.sp*sm*dt; if(s.t>1)s.t-=1;
+    for(let j=0;j<TRAIL;j++){ let tt=s.t-j*SPACING; if(tt<0)tt+=1; arcPoint(s.d,tt,tmp);
+      const idx=(i*TRAIL+j)*3; travPos[idx]=tmp.x; travPos[idx+1]=tmp.y; travPos[idx+2]=tmp.z; } }
+  travGeo.attributes.position.needsUpdate=true;
+
+  // shape sits opposite the active section's text; during a nav transition it goes straight to the
+  // target side while the camera tracks it (below), so there's no visible side-to-side wobble
+  let tX;
+  if(nav){ tX = nav.toX; }
+  else { let side='r'; const mid=scrollY+innerHeight*0.5;   // viewport midpoint in document space
+    for(let i=0;i<sideEls.length;i++){ const s=sideEls[i]; if(s.top<=mid && s.top+s.h>=mid){ side=s.side; break; } }
+    tX = baseX===0 ? 0 : (side==='l' ? -baseX : side==='c' ? 0 : baseX); }
+  world.position.x = THREE.MathUtils.damp(world.position.x, tX, nav?5.0:3.08, dt);
+
+  const spin = reduced ? 0 : t*0.05;
+  world.rotation.y = spin + mouse.x*0.5 + navTwist;
+  world.rotation.x = mouse.y*0.28;
+  stars.rotation.y = t*0.008; starU.uTime.value = t;
+  // camera dolly — normally per-stage; on nav click it dives in, jumps section, then emerges
+  const baseZ = sampleStops(camStops, pSmooth) + (reduced?0:Math.sin(t*0.25)*0.3);
+  let fov=48, lookTarget=0;
+  if(nav){
+    if(nav.phase==='in'){
+      camera.position.z = nav.fromZ + (2.4-nav.fromZ)*navF; fov=48+15.0*navF;
+      lookTarget = world.position.x*navF;                              // ease the look onto the shape as we dive in
+      content.style.opacity = (1.0 - Math.min(navK/0.7,1)).toFixed(3); // text fades out
+      if(navK>=1){ window.scrollTo(0,nav.targetY);
+        nav.phase='out'; nav.start=performance.now()/1000;
+        nav.fromP=pSmooth; nav.toP=THREE.MathUtils.clamp(nav.targetY/innerHeight,0,NS-1); } }
+    else {
+      camera.position.z = 2.4 + (baseZ-2.4)*navF; fov=48+15.0*(1.0-navF);
+      lookTarget = world.position.x*(1.0-navF);                        // release tracking exactly as the zoom-out completes
+      content.style.opacity = Math.max((navK-0.3)/0.7,0).toFixed(3);   // text fades back in
+      if(navK>=1){ nav=null; content.style.opacity=''; } }
+    bloom.strength = 0.8 + navDepth*0.8;                               // flash brightest at the deepest point
+    navTwist += dt*2.2*navDepth;                                       // dive-spin tapers to 0 at both ends — no abrupt stop
+    if(Math.abs(camera.fov-fov)>0.01){ camera.fov=fov; camera.updateProjectionMatrix(); }
+  } else {
+    if(Math.abs(camera.fov-48)>0.01){ camera.fov=48; camera.updateProjectionMatrix(); }
+    camera.position.z = THREE.MathUtils.damp(camera.position.z, baseZ, 2.76, dt);
+    bloom.strength = THREE.MathUtils.damp(bloom.strength, 0.8, 6.32, dt);
+  }
+  camera.position.x = THREE.MathUtils.damp(camera.position.x, mouse.x*1.0, 2.45, dt);
+  camera.position.y = THREE.MathUtils.damp(camera.position.y, -mouse.y*1.0, 2.45, dt);
+  // during a nav dive the look is set directly to its eased target (no trailing second lerp -> nothing
+  // keeps drifting after the transition ends); off-nav it eases back to centre, frame-rate independent
+  lookX = nav ? lookTarget : THREE.MathUtils.damp(lookX, 0, 7.67, dt);
+  camera.lookAt(lookX, 0, 0);
+  composer.render();
+  requestAnimationFrame(animate);
+}
+animate();
+</script>
+</body>
+</html>
